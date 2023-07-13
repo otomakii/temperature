@@ -7,6 +7,7 @@ class Converter:
     def __init__(self):
 
         # Initialise variables (such as the feedback variable)
+        self.to_help = ""
         self.var_feedback = StringVar()
         self.var_feedback.set("")
         self.var_has_error = StringVar()
@@ -20,9 +21,6 @@ class Converter:
         # Gui frame
         self.temp_frame = Frame(padx=10, pady=10)
         self.temp_frame.grid()
-
-        self.button_frame = Frame(padx=30, pady=30)
-        self.button_frame.grid(row=0)
 
         self.temp_heading = Label(self.temp_frame,
                                   text="Temperature Converter",
@@ -152,7 +150,7 @@ class Converter:
         self.output_answer()
 
     # check temperature is more than -273 and convert it
-
+    # redy for next calculation
     def output_answer(self):
         output = self.var_feedback.get()
         has_errors = self.var_has_error.get()
@@ -171,17 +169,14 @@ class Converter:
 
 
 class DisplayHelp:
-    # closes help dialogue used by button and x at top of dialogue.
-    def close_help(self, partner):
-        partner.to_help_button.config(state=NORMAL)
-        self.help_box.destroy()
 
     def __init__(self, partner):
+
         # setup dialogue box
         background = "white"
         self.help_box = Toplevel()
 
-        # disable help
+        # disable help button
         partner.to_help_button.config(state=DISABLED)
 
         # user
@@ -221,6 +216,11 @@ class DisplayHelp:
                                      command=partial(self.close_help,
                                                      partner))
         self.dismiss_button.grid(row=2, padx=10, pady=10)
+
+    # closes help dialogue used by button and x at top of dialogue.
+    def close_help(self, partner):
+        partner.to_help_button.config(state=NORMAL)
+        self.help_box.destroy()
 
 
 # --Main Routine--
