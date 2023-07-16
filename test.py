@@ -1,5 +1,7 @@
 from tkinter import *
 from functools import partial
+from datetime import date
+import re
 
 
 class Converter:
@@ -39,6 +41,10 @@ class HistoryExport:
         self.var_max_calcs = IntVar()
         self.var_max_calcs.set(max_calcs)
 
+        self.var_filename = StringVar()
+        self.var_todays_date = StringVar()
+        self.var_calc_list = StringVar()
+
         self.get_calc_string(calc_list)
         # setup dialogue box
         self.history_box = Toplevel()
@@ -60,8 +66,10 @@ class HistoryExport:
                                            font=("Quicksand", "12"))
         self.history_heading_label.grid(row=0)
 
-        history_text = "Below are your calculations \r" \
-                       "showing 3 / 3 calculations. \r" \
+        history_text = "Below is your calculation history \r" \
+                       "showing 5 / 5 calculations. Please export \r" \
+                       "your calculations to see your full history \r" \
+                       " \r" \
                        "All calculations are shown to the nearest degree"
         self.text_instructions_label = Label(self.history_frame,
                                              text=history_text,
@@ -77,10 +85,10 @@ class HistoryExport:
         self.all_calcs_label.grid(row=2)
 
         # instructions for saving files
-        save_text = "Either choose a custom file name and push export\r" \
-                    "or simply push export to save your calculations\r" \
-                    "in a text file. If the filename already exists\r" \
-                    "it will be overwritten."
+        save_text = "Either choose a custom file name and push <Export> \r" \
+                    "or simply push <Export> to save your calculations \r" \
+                    "in a text file. If the filename already exists \r" \
+                    "it will be OVERWRITTEN."
         self.save_instructions_label = Label(self.history_frame,
                                              text=save_text,
                                              wraplength=300,
@@ -106,7 +114,8 @@ class HistoryExport:
         self.export_button = Button(self.button_frame,
                                     font=("quicksand", "12"),
                                     text="Export", bg="light gray",
-                                    fg="black", width=12)
+                                    fg="black", width=12,
+                                    command=self.make_file)
         self.export_button.grid(row=0, column=0, padx=10, pady=10)
 
         self.dismiss_button = Button(self.button_frame,
@@ -116,15 +125,18 @@ class HistoryExport:
                                      command=partial(self.close_history, partner))
         self.dismiss_button.grid(row=0, column=1, padx=10, pady=10)
 
-    def close_history(self, partner):
-
-        partner.to_history_button.config(state=NORMAL)
-        self.history_box.destroy()
-
+    # change calculation list into a string
     def get_calc_string(self, var_calculations):
 
         max_calcs = self.var_max_calcs.get()
         calc_string = ""
+
+        oldest_first = ""
+        for item in var_calculations:
+            oldest_first += item
+            oldest_first += "\n"
+
+        self.var_calc_list.set(oldest_first)
 
         if len(var_calculations) >= max_calcs:
             stop = max_calcs
@@ -140,6 +152,77 @@ class HistoryExport:
         calc_string += var_calculations[-max_calcs]
 
         return calc_string
+
+    def make_file(self):
+        filename = self.filename_entry.get()
+
+        filename_ok = ""
+        date_part = self.get_date()
+
+        if filename == "":
+            filename = "{}_temperature_calculations".format(date_part)
+
+        else:
+            filename_ok = self.check_filename(filename)
+
+        if filename_ok == "":
+            filename += ".txt"
+            success = "Your calculations have \r" \
+                      "been saved (filename: {})".format(filename)
+            self.var_filename.set(filename)
+            self.filename_feedback_label.config(text=success,
+                                                fg="dark green")
+            self.filename_entry.config(bg="white")
+
+            self.write_to_file()
+
+        else:
+            self.filename_error_label.config(text=filename_ok,
+                                             fg="red")
+            self.filename_error_label.config(bg="pink")
+
+    # retrieves date
+    def get_date(self):
+        today = date.today()
+
+        day = today.strftime("%d")
+        month = today.strftime("%m")
+        year = today.strftime("%y")
+
+        todays_date = "{}/{}/{}".format(day, month, year)
+        self.var_todays_date.set(todays_date)
+
+        return "{}_{}_{}".format(year, month, day)
+
+    @staticmethod
+    def check_filename(filename):
+        problem = ""
+
+        valid_char = "[A-Za-z0-9_]"
+
+        for letter in filename:
+            if re.match(valid_char, letter):
+                continue
+
+            elif letter == " ":
+                problem = "Sorry, no spaces allowed"
+
+            else:
+                problem = ("Sorry, no {}'s allowed".format(letter))
+
+            break
+
+        if problem != "":
+            problem = "{}. Use letter / numbers /\r" \
+                      "underscores only.".format(problem)
+
+        return problem
+
+    # closes help dialogue
+    def close_history(self, partner):
+
+        partner.to_history_button.config(state=NORMAL)
+        self.history_box.destroy()
 
 
 # --Main Routine--
